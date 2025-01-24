@@ -20,11 +20,11 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-class User(BaseModel):
-    id: int
-    name: str
-    email: str
-    is_active: bool = True
+# class User(BaseModel):
+#     id: int
+#     name: str
+#     email: str
+#     is_active: bool = True
     
 # logging middleware
 @app.middleware("http")
@@ -39,6 +39,7 @@ async def log_requests(request: Request, call_next):
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -94,25 +95,25 @@ def login_user(user: schemas.UserLogin, db: Session = Depends(get_db)):
 
 
 
-@router.get("/users/")
-def get_users():
-    return {"users": ["Alice", "Bob"]}
+# @router.get("/users/")
+# def get_users():
+#     return {"users": ["Alice", "Bob"]}
 
-@app.get("/")
-def read_root():
- return {"Hello": "World"}
+# @app.get("/")
+# def read_root():
+#  return {"Hello": "World"}
 
-@app.get("/item/{id}")
-def read_one(id: int):
-    return {"message": f"path parameter {id}"}
+# @app.get("/item/{id}")
+# def read_one(id: int):
+#     return {"message": f"path parameter {id}"}
 
-@app.get("/item/")
-def read_query(skip: int, limit: int):
-    return {"message": f"query data skip:{skip} limit:{limit}"}
+# @app.get("/item/")
+# def read_query(skip: int, limit: int):
+#     return {"message": f"query data skip:{skip} limit:{limit}"}
 
-@app.post("/create")
-def create_post(user: User):
-    return {"message": "You've created the post",
-            "data": user}
+# @app.post("/create")
+# def create_post(user: User):
+#     return {"message": "You've created the post",
+#             "data": user}
 
 app.include_router(router, prefix="/api/v1")
