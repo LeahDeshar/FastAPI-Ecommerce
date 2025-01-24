@@ -1,3 +1,7 @@
+# Ecommerce API with FastAPI and SQLite - Microservice Architecture
+
+Ecommerce web app using FastAPI and SQLite, with a microservice architecture. It handles user authentication, product management, cart management, order processing, and payment integration. Modular services ensure flexibility and easy maintenance.
+
 ## Technologies for Integration
 
 - FastAPI for the backend.
