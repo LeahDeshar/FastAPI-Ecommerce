@@ -3,7 +3,9 @@
 - [x] **Login and Registration**
 - [x] **Get Current Users**
 - [x] **JWT Authentication** (returns token)
-- [ ] **Role Based Authentication and Access**
+- [x] **Get Current User**
+- [x] **Role Based Authentication and Access**
+- [x] **Use of Decorator for RBAC**
 
 ---
 
