@@ -9,6 +9,8 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 import models, schemas
+from fastapi.middleware import Middleware
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -20,29 +22,36 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# class User(BaseModel):
-#     id: int
-#     name: str
-#     email: str
-#     is_active: bool = True
-    
-# logging middleware
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     print(f"Request: Method -> {request.method} URL -> {request.url} -----------")
     response = await call_next(request)
     return response
 
-
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    if "Authorization" in request.headers:
+        auth_header = request.headers.get("Authorization")
+        token = auth_header.split(" ")[1] if auth_header.startswith("Bearer ") else None
+        if token:
+            try:
+                payload = verify_access_token(token)
+                request.state.user = payload  
+            except HTTPException as e:
+                return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
+        else:
+            return JSONResponse(status_code=401, content={"detail": "Invalid or missing token"})
+    return await call_next(request)
 
 
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "role": data.get("role")})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
 
 def verify_access_token(token: str):
     try:
@@ -65,7 +74,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
-@router.post("/register", response_model=schemas.UserResponse)
+
+@router.post("/register", response_model=schemas.RegisterResponse,status_code=status.HTTP_201_CREATED)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if db.query(models.User).filter(models.User.username == user.username).first():
         raise HTTPException(status_code=400, detail="Username already taken")
@@ -73,12 +83,23 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     
     hashed_password = hash_password(user.password)
-    db_user = models.User(username=user.username, email=user.email, password=hashed_password)
+    
+    db_user = models.User(
+        username=user.username,
+        email=user.email,
+        password=hashed_password,
+        role=user.role,
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     
-    return JSONResponse(content={"message": "User registered successfully", "user": db_user})
+    user_response = schemas.UserResponse.from_orm(db_user)
+    return schemas.RegisterResponse(
+        data=user_response,
+        message="Registered successfully"
+    )
+
 
 @router.post("/login", response_model=schemas.UserResponse)
 def login_user(user: schemas.UserLogin, db: Session = Depends(get_db)):
@@ -89,31 +110,12 @@ def login_user(user: schemas.UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid credentials")
    
    
-    
-    access_token = create_access_token(data={"sub": db_user.email})
-    return JSONResponse(content={"access_token": access_token, "token_type": "bearer"})
+    access_token = create_access_token(data={"sub": db_user.email, "role": db_user.role.value})
+  
+   
+    return JSONResponse(content={"access_token": access_token, "token_type": "bearer","role": db_user.role.value})
 
 
 
-# @router.get("/users/")
-# def get_users():
-#     return {"users": ["Alice", "Bob"]}
-
-# @app.get("/")
-# def read_root():
-#  return {"Hello": "World"}
-
-# @app.get("/item/{id}")
-# def read_one(id: int):
-#     return {"message": f"path parameter {id}"}
-
-# @app.get("/item/")
-# def read_query(skip: int, limit: int):
-#     return {"message": f"query data skip:{skip} limit:{limit}"}
-
-# @app.post("/create")
-# def create_post(user: User):
-#     return {"message": "You've created the post",
-#             "data": user}
 
 app.include_router(router, prefix="/api/v1")
