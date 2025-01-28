@@ -23,14 +23,3 @@ class User(Base):
     profile = relationship("Profile", back_populates="user", uselist=False)
 
 
-class Profile(Base):
-    __tablename__ = "profile"
-
-    id = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String, nullable=False)
-    last_name = Column(String, nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    user = relationship("User", back_populates="profile")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-

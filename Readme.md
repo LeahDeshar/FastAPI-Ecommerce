@@ -19,11 +19,11 @@ Ecommerce web app using FastAPI and SQLite, with a microservice architecture. It
 
 - **Responsibilities**: Manages user login, registration, and authentication via JWT tokens.
 - **Key Features**:
-  - [ ] User registration
-  - [ ] User login
-  - [ ] JWT token generation
-  - [ ] Role-based authentication
-  - [ ] Token validation
+  - [x] User registration
+  - [x] User login
+  - [x] JWT token generation
+  - [x] Role-based authentication
+  - [x] Token validation
   - [ ] Secure user profile access
 
 ### 2. **User Management Service**
