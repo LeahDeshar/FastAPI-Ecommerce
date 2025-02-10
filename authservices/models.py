@@ -14,6 +14,8 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
+    address = Column(String)
+    phone_number = Column(String)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     # role = Column(String, default="user")

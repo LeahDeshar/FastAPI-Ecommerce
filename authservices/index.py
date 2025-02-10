@@ -161,9 +161,29 @@ async def dashboard_route(request: Request):
 async def dashboard_route(request: Request):
     return {"message": "Welcome to your test controller!"}
 
-# Public Route Example
 @router.get("/public")
 async def public_route():
     return {"message": "This is a public route"}
+
+
+@router.get("/user/{user_id}", response_model=schemas.UserResponse)
+@role_required(["user","admin"])
+def get_user(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return schemas.UserResponse.from_orm(user)
+
+
+@router.delete("/user/delete", response_model=dict)
+@role_required(["user","admin"])
+def delete_user(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    db.delete(user)
+    db.commit()
+    return {"message": "User account deleted successfully"}
 
 app.include_router(router, prefix="/api/v1/auth")
